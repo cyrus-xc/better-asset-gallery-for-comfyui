@@ -1,0 +1,29 @@
+.bag-lightbox { --bag-panel-width: min(390px, 38vw); padding-right: var(--bag-panel-width); }
+.bag-lightbox img { max-width: calc(100vw - var(--bag-panel-width) - 112px) !important; max-height: 90vh !important; }
+.bag-lightbox > button:not(:first-of-type):last-of-type { right: calc(var(--bag-panel-width) + 16px); }
+.bag-panel { position: absolute; inset: 0 0 0 auto; width: var(--bag-panel-width); overflow: auto; padding: 24px; padding-top: 64px; background: var(--comfy-menu-bg, #17191e); color: var(--input-text, #e5e7eb); border-left: 1px solid #ffffff1a; font: 13px/1.6 system-ui, sans-serif; text-align: left; cursor: auto; user-select: text; }
+.bag-heading { font-size: 18px; font-weight: 650; margin: 0 0 24px; }
+.bag-section { border-top: 1px solid #ffffff14; padding: 18px 0; }
+.bag-section-title { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin: 0 0 10px; font-size: 12px; font-weight: 650; color: #a6abb5; }
+.bag-filename { margin: 0 0 14px; font-weight: 600; overflow-wrap: anywhere; }
+.bag-info { display: grid; grid-template-columns: minmax(70px, auto) minmax(0, 1fr); gap: 8px 14px; margin: 0; }
+.bag-info dt { color: #9299a5; font-size: 11px; }
+.bag-info dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.bag-prompt { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.85; }
+.bag-node, .bag-source { color: #8e96a4; font-size: 11px; margin: 0 0 10px; overflow-wrap: anywhere; }
+.bag-value { margin: 0 0 12px; overflow-wrap: anywhere; }
+.bag-copy { color: #c5caff; border: 1px solid #ffffff20; border-radius: 5px; padding: 2px 8px; font-size: 11px; cursor: pointer; background: #ffffff06; }
+.bag-copy:hover { background: #ffffff14; }
+.bag-copy:focus-visible { outline: 2px solid #adb3ff; outline-offset: 3px; }
+.bag-empty { color: #9299a5; margin: 20px 0; }
+.bag-error { color: #fca5a5; }
+.bag-raw { border-top: 1px solid #ffffff14; padding: 14px 0; }
+.bag-raw summary { cursor: pointer; color: #a6abb5; }
+.bag-raw pre { white-space: pre-wrap; overflow-wrap: anywhere; font: 11px/1.6 monospace; max-height: 320px; overflow: auto; }
+@media (max-width: 700px) {
+  .bag-lightbox { padding-right: 0; padding-bottom: 40vh; }
+  .bag-lightbox img { max-height: 55vh !important; max-width: 92vw !important; }
+  .bag-panel { inset: auto 0 0; width: 100%; height: 40vh; padding: 20px; border-left: 0; border-top: 1px solid #ffffff1a; }
+  .bag-lightbox > button:not(:first-of-type):last-of-type { right: 16px; }
+  .bag-heading { margin-bottom: 14px; }
+}

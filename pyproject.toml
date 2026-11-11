@@ -1,0 +1,12 @@
+[project]
+name = "better-asset-gallery-for-comfyui"
+version = "0.1.0"
+description = "Permanent file deletion and image metadata inside ComfyUI's native asset gallery"
+license = "GPL-3.0-or-later"
+requires-python = ">=3.12"
+
+[project.urls]
+Repository = "https://github.com/cyrus-xc/better-asset-gallery-for-comfyui"
+
+[tool.comfy]
+DisplayName = "Better Asset Gallery for ComfyUI"
