@@ -5,6 +5,12 @@
 .bag-heading { font-size: 18px; font-weight: 650; margin: 0 0 24px; }
 .bag-section { border-top: 1px solid #ffffff14; padding: 18px 0; }
 .bag-section-title { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin: 0 0 10px; font-size: 12px; font-weight: 650; color: #a6abb5; }
+.bag-prompt-section > summary { cursor: pointer; margin: 0; justify-content: flex-start; list-style: none; }
+.bag-prompt-section > summary::before { content: ""; width: 6px; height: 6px; border: solid currentColor; border-width: 0 1px 1px 0; transform: rotate(-45deg); flex-shrink: 0; }
+.bag-prompt-section[open] > summary::before { transform: rotate(45deg); }
+.bag-prompt-section > summary:focus-visible { outline: 2px solid #adb3ff; outline-offset: 4px; }
+.bag-prompt-content { display: flow-root; padding-top: 10px; }
+.bag-prompt-content > .bag-copy { float: right; margin: 0 0 8px 10px; }
 .bag-filename { margin: 0 0 14px; font-weight: 600; overflow-wrap: anywhere; }
 .bag-info { display: grid; grid-template-columns: minmax(70px, auto) minmax(0, 1fr); gap: 8px 14px; margin: 0; }
 .bag-info dt { color: #9299a5; font-size: 11px; }

@@ -54,11 +54,14 @@ export function createMetadataPanel({api, app, labels}) {
     details.append(info);
     if (data.source) panel.append(element("p", "bag-source", labels()[data.source]));
     for (const prompt of data.prompts) {
-      const block = section(labels()[prompt.role] || labels().prompts);
-      const heading = block.querySelector("h3");
+      const block = element("details", "bag-section bag-prompt-section");
+      const heading = element("summary", "bag-section-title", labels()[prompt.role] || labels().prompts);
+      const content = element("div", "bag-prompt-content");
       const empty = !prompt.text;
-      if (!empty) heading.append(copyButton(prompt.text));
-      block.append(element("p", "bag-node", `${prompt.node_type} #${prompt.node_id} · ${prompt.field}`), element("p", empty ? "bag-prompt bag-empty" : "bag-prompt", empty ? labels().notFilled : prompt.text));
+      if (!empty) content.append(copyButton(prompt.text));
+      content.append(element("p", "bag-node", `${prompt.node_type} #${prompt.node_id} · ${prompt.field}`), element("p", empty ? "bag-prompt bag-empty" : "bag-prompt", empty ? labels().notFilled : prompt.text));
+      block.append(heading, content);
+      panel.append(block);
     }
     if (data.models.length) {
       const block = section(labels().models);
