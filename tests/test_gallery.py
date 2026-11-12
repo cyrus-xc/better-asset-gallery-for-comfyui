@@ -287,7 +287,7 @@ class GalleryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((result["file"]["width"], result["file"]["height"]), (32, 24))
 
     async def test_qwen_dual_outputs_keep_positive_and_negative_separate(self):
-        for negative in ("", "blurry, low quality"):
+        for negative in ("", "  ", "blurry, low quality"):
             for reverse in (False, True):
                 with self.subTest(negative=negative, reverse=reverse):
                     graph = {
@@ -298,8 +298,8 @@ class GalleryTests(unittest.IsolatedAsyncioTestCase):
                     response = await self.client.get("/better-assets/metadata?filename=paired.png&type=output")
                     result = await response.json()
                     expected = [("prompt", "negative" if reverse else "positive", "a quiet lake")]
-                    if negative:
-                        expected.append(("negative_prompt", "positive" if reverse else "negative", negative))
+                    if negative.strip() or not reverse:
+                        expected.append(("negative_prompt", "positive" if reverse else "negative", negative.strip()))
                     self.assertEqual(sorted((p["field"], p["role"], p["text"]) for p in result["prompts"]), sorted(expected))
 
     async def test_qwen_linked_text_through_conditioning_node_keeps_output_role(self):
@@ -321,6 +321,21 @@ class GalleryTests(unittest.IsolatedAsyncioTestCase):
         response = await self.client.get("/better-assets/metadata?filename=unlinked.png&type=output")
         result = await response.json()
         self.assertEqual([(p["field"], p["role"]) for p in result["prompts"]], [("prompt", "positive"), ("negative_prompt", "negative")])
+
+    async def test_empty_linked_negative_prompt_is_distinct_from_missing_metadata(self):
+        graph = {
+            "1": {"class_type": "PrimitiveString", "inputs": {"value": "  "}},
+            "2": {"class_type": "CLIPTextEncode", "inputs": {"text": ["1", 0]}},
+            "3": {"class_type": "KSampler", "inputs": {"negative": ["2", 0]}},
+        }
+        self.image("empty-negative.png", graph=graph)
+        response = await self.client.get("/better-assets/metadata?filename=empty-negative.png&type=output")
+        result = await response.json()
+        self.assertEqual([(p["node_id"], p["role"], p["text"]) for p in result["prompts"]], [("1", "negative", "")])
+        self.image("no-prompt-data.png")
+        response = await self.client.get("/better-assets/metadata?filename=no-prompt-data.png&type=output")
+        result = await response.json()
+        self.assertEqual(result["prompts"], [])
 
     async def test_history_metadata_without_embedded_prompt(self):
         graph = {"1": {"class_type": "CLIPTextEncode", "inputs": {"text": "a quiet lake"}},

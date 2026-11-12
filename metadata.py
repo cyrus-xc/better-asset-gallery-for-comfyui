@@ -90,7 +90,7 @@ def prompt_info(graph):
             linked = reference(value)
             if linked:
                 yield from text_inputs(linked, role, seen)
-            elif field in TEXT_FIELDS | {"value", "negative_prompt"} and isinstance(value, str) and value.strip():
+            elif field in TEXT_FIELDS | {"value", "negative_prompt"} and isinstance(value, str):
                 yield node_id, field, value.strip(), role
 
     def add_prompt(node_id, field, text, role):
@@ -98,6 +98,8 @@ def prompt_info(graph):
         if key in seen_prompts:
             return
         seen_prompts.add(key)
+        if not text and role != "negative":
+            return
         node = nodes[node_id]
         prompts.append({"node_id": node_id, "node_type": node.get("class_type", ""), "field": field, "role": role, "text": text})
 
@@ -107,14 +109,14 @@ def prompt_info(graph):
             if linked:
                 for values in text_inputs(linked, role, set()):
                     add_prompt(*values)
-    used = {(entry["node_id"], entry["field"]) for entry in prompts}
+    used = {(node_id, field) for node_id, field, _ in seen_prompts}
     for node_id, node in nodes.items():
         node_type = node.get("class_type", "")
         text_roles = {"prompt": "positive", "negative_prompt": "negative"} if node_type == "TextEncodeQwenImage21" else {
             field: "instruction" if "qwen" in node_type.lower() else "text" for field in TEXT_FIELDS
         }
         for field, value in node["inputs"].items():
-            if field in text_roles and isinstance(value, str) and value.strip() and (node_id, field) not in used:
+            if field in text_roles and isinstance(value, str) and (node_id, field) not in used:
                 add_prompt(node_id, field, value.strip(), text_roles[field])
             if field in MODEL_FIELDS and isinstance(value, str) and value:
                 key = (field, value)
