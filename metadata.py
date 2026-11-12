@@ -72,20 +72,25 @@ def prompt_info(graph):
     seen_prompts, seen_models = set(), set()
 
     def reference(value):
-        return str(value[0]) if isinstance(value, list) and len(value) == 2 and str(value[0]) in nodes else None
+        return (str(value[0]), value[1]) if isinstance(value, list) and len(value) == 2 and str(value[0]) in nodes and isinstance(value[1], int) else None
 
-    def text_inputs(node_id, role, seen):
-        if node_id in seen:
+    def text_inputs(link, role, seen):
+        if link in seen:
             return
-        seen = seen | {node_id}
+        seen = seen | {link}
+        node_id, output_index = link
         node = nodes[node_id]
         if node.get("class_type") == "ConditioningZeroOut":
             return
-        for field, value in node["inputs"].items():
+        fields = node["inputs"]
+        if node.get("class_type") == "TextEncodeQwenImage21":
+            field = {0: "prompt", 1: "negative_prompt"}.get(output_index)
+            fields = {field: node["inputs"].get(field)} if field else {}
+        for field, value in fields.items():
             linked = reference(value)
             if linked:
                 yield from text_inputs(linked, role, seen)
-            elif field in TEXT_FIELDS | {"value"} and isinstance(value, str) and value.strip():
+            elif field in TEXT_FIELDS | {"value", "negative_prompt"} and isinstance(value, str) and value.strip():
                 yield node_id, field, value.strip(), role
 
     def add_prompt(node_id, field, text, role):
@@ -105,9 +110,12 @@ def prompt_info(graph):
     used = {(entry["node_id"], entry["field"]) for entry in prompts}
     for node_id, node in nodes.items():
         node_type = node.get("class_type", "")
+        text_roles = {"prompt": "positive", "negative_prompt": "negative"} if node_type == "TextEncodeQwenImage21" else {
+            field: "instruction" if "qwen" in node_type.lower() else "text" for field in TEXT_FIELDS
+        }
         for field, value in node["inputs"].items():
-            if field in TEXT_FIELDS and isinstance(value, str) and value.strip() and (node_id, field) not in used:
-                add_prompt(node_id, field, value.strip(), "instruction" if "qwen" in node_type.lower() else "text")
+            if field in text_roles and isinstance(value, str) and value.strip() and (node_id, field) not in used:
+                add_prompt(node_id, field, value.strip(), text_roles[field])
             if field in MODEL_FIELDS and isinstance(value, str) and value:
                 key = (field, value)
                 if key not in seen_models:

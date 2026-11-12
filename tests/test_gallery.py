@@ -286,6 +286,42 @@ class GalleryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["models"][0]["name"], "qwen-image.gguf")
         self.assertEqual((result["file"]["width"], result["file"]["height"]), (32, 24))
 
+    async def test_qwen_dual_outputs_keep_positive_and_negative_separate(self):
+        for negative in ("", "blurry, low quality"):
+            for reverse in (False, True):
+                with self.subTest(negative=negative, reverse=reverse):
+                    graph = {
+                        "4": {"class_type": "TextEncodeQwenImage21", "inputs": {"prompt": "a quiet lake", "negative_prompt": negative}},
+                        "6": {"class_type": "KSampler", "inputs": {"positive": ["4", int(reverse)], "negative": ["4", int(not reverse)]}},
+                    }
+                    self.image("paired.png", graph=graph)
+                    response = await self.client.get("/better-assets/metadata?filename=paired.png&type=output")
+                    result = await response.json()
+                    expected = [("prompt", "negative" if reverse else "positive", "a quiet lake")]
+                    if negative:
+                        expected.append(("negative_prompt", "positive" if reverse else "negative", negative))
+                    self.assertEqual(sorted((p["field"], p["role"], p["text"]) for p in result["prompts"]), sorted(expected))
+
+    async def test_qwen_linked_text_through_conditioning_node_keeps_output_role(self):
+        graph = {
+            "1": {"class_type": "PrimitiveString", "inputs": {"value": "a quiet lake"}},
+            "2": {"class_type": "PrimitiveString", "inputs": {"value": "blurry"}},
+            "4": {"class_type": "TextEncodeQwenImage21", "inputs": {"prompt": ["1", 0], "negative_prompt": ["2", 0]}},
+            "5": {"class_type": "ConditioningSetTimestepRange", "inputs": {"conditioning": ["4", 1], "start": 0, "end": 1}},
+            "6": {"class_type": "KSampler", "inputs": {"positive": ["4", 0], "negative": ["5", 0]}},
+        }
+        self.image("linked.png", graph=graph)
+        response = await self.client.get("/better-assets/metadata?filename=linked.png&type=output")
+        result = await response.json()
+        self.assertEqual([(p["node_id"], p["role"], p["text"]) for p in result["prompts"]], [("1", "positive", "a quiet lake"), ("2", "negative", "blurry")])
+
+    async def test_qwen_prompt_fields_without_sampler_have_distinct_roles(self):
+        graph = {"4": {"class_type": "TextEncodeQwenImage21", "inputs": {"prompt": "a quiet lake", "negative_prompt": "blurry"}}}
+        self.image("unlinked.png", graph=graph)
+        response = await self.client.get("/better-assets/metadata?filename=unlinked.png&type=output")
+        result = await response.json()
+        self.assertEqual([(p["field"], p["role"]) for p in result["prompts"]], [("prompt", "positive"), ("negative_prompt", "negative")])
+
     async def test_history_metadata_without_embedded_prompt(self):
         graph = {"1": {"class_type": "CLIPTextEncode", "inputs": {"text": "a quiet lake"}},
                  "2": {"class_type": "ConditioningZeroOut", "inputs": {"conditioning": ["1", 0]}},
